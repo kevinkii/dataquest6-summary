@@ -105,6 +105,7 @@ pv_happy_family_stats = happiness2015.pivot_table(['Happiness Score','Family'], 
 
 #%% [markdown]
 # ### COMMON AGGREGATION METHODS
+#
 # mean(): Calculates the mean of groups
 #
 # sum(): Calculates the sum of group values
@@ -223,3 +224,110 @@ pivot_table_combined.plot(kind='barh', title='Mean Happiness Scores by Year', xl
 # Can Combine More Than Two Dataframes at a Time? |	Yes | No |
 # Can Combine Dataframes Vertically (axis=0) or Horizontally (axis=1)? | Both | Horizontally |
 # | Syntax | Concat (Vertically)<br>concat([df1,df2,df3])<br><br>Concat (Horizontally)<br>concat([df1,df2,df3], axis = 1) | Merge (Join on Columns)<br>merge(left = df1, right = df2, how = 'join_type', on = 'Col')<br><br>Merge (Join on Index)<br>merge(left = df1, right = df2, how = 'join_type', left_index = True, right_index = True) |
+
+#%% [markdown]
+# ### Transforming Data with Pandas
+
+#%%
+mapping = {'Economy (GDP per Capita)': 'Economy', 'Health (Life Expectancy)': 'Health', 'Trust (Government Corruption)': 'Trust' }
+
+happiness2015 = happiness2015.rename(mapping, axis =1)
+
+#%%
+def label1(element):
+    if element > 1:
+        return 'High'
+    else:
+        return 'Low'
+
+# Map values of Series according to input correspondence
+economy_impact_map = happiness2015['Economy'].map(label1)
+
+# method to apply a function with additional arguments element-wise
+economy_impact_apply1 = happiness2015['Economy'].apply(label1) 
+equal = economy_impact_map.equals(economy_impact_apply1)
+print(economy_impact_map)
+
+#%%
+# define element and x
+def label2(element, x):
+    if element > x:
+        return 'High'
+    else:
+        return 'Low'
+economy_impact_apply2 = happiness2015['Economy'].apply(label2, x = 0.8)
+
+#%%
+economy_apply = happiness2015['Economy'].apply(label1)
+
+factors = ['Economy', 'Family', 'Health', 'Freedom', 'Trust', 'Generosity']
+
+# apply functions element-wise to multiple columns at once
+factors_impact = happiness2015[factors].applymap(label1)
+
+#%%
+def v_counts(col):
+    num = col.value_counts()
+    den = col.size
+    return num/den
+
+v_counts_pct = factors_impact.apply(v_counts)
+print(v_counts_pct)
+
+#%%
+#Calculate the sum of the factor columns in each row.
+happiness2015['Factors Sum'] = happiness2015[['Economy', 'Family', 'Health', 'Freedom', 'Trust', 'Generosity', 'Dystopia Residual']].sum(axis=1)
+
+#Display the first five rows of the result and the Happiness Score column.
+happiness2015[['Happiness Score', 'Factors Sum']].head()
+
+#%%
+factors = ['Economy', 'Family', 'Health', 'Freedom', 'Trust', 'Generosity', 'Dystopia Residual']
+
+def percentages(col):
+    div = col/happiness2015['Happiness Score']
+    return div*100
+factor_percentages = happiness2015[factors].apply(percentages)
+
+#%%
+main_cols = ['Country', 'Region', 'Happiness Rank', 'Happiness Score']
+factors = ['Economy', 'Family', 'Health', 'Freedom', 'Trust', 'Generosity', 'Dystopia Residual']
+
+# id_vars = the name of the columns that should remain in the same result
+# value_vars = the name of the columns that should be changed to rows in the result
+
+melt = pd.melt(happiness2015, id_vars=main_cols, value_vars=factors)
+melt['Percentage'] = round(100*melt['value']/melt['Happiness Score'],2)
+print(melt)
+
+#%%
+pv_melt = melt.pivot_table(index='variable', values='value')
+pv_melt.plot(kind='pie', y='value', legend=False)
+
+#%%
+#Concatenate happiness2015, happiness2016, and happiness2017.
+combined = pd.concat([happiness2015, happiness2016, happiness2017])
+
+#Create a pivot table listing the mean happiness score for each year. Since the default aggregation function is the mean, we excluded the `aggfunc` argument.
+pivot_table_combined = combined.pivot_table(index = 'Year', values = 'Happiness Score')
+
+#Plot the pivot table.
+pivot_table_combined.plot(kind ='barh', title='Mean Happiness Scores by Year', xlim = (0,10))
+
+#%% [markdown]
+# | Method | Series or Dataframe Method | Applies Functions Element-wise? |
+# | --- | --- | --- |
+# | Map | Series | Yes |
+# | Apply | Series | Yes |
+# | Applymap | Dataframe | Yes |
+# | Apply | Dataframe | No, applies functions along an axis |
+
+#%% [markdown]
+# ## Working With Strings In Pandas
+
+#%%
+world_dev = pd.read_csv("World_dev.csv")
+col_renaming = {'SourceOfMostRecentIncomeAndExpenditureData': 'IESurvey'}
+world_dev = world_dev.rename(col_renaming, axis = 1)
+
+merged = pd.merge(left=happiness2015, right=world_dev, how='left', left_on=happiness2015['Country'], right_on=world_dev['ShortName'])
