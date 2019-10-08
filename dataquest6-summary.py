@@ -483,6 +483,7 @@ missing_region = regions_2017.isnull().sum()
 print(missing_region)
 
 #%%
+regions = combined[['COUNTRY','REGION']]
 combined = pd.merge(left = combined, right = regions, on = 'COUNTRY', how = 'left')
 combined = combined.drop('REGION_x', axis = 1)
 combined.isnull().sum()
@@ -507,7 +508,7 @@ combined = combined.drop(columns_to_drop,axis = 1)
 combined = combined.dropna(thresh = 159, axis = 1)
 
 #%%
-sorted = combined.set_index('REGION').sort_values(['REGION', 'HAPPINESS SCORE'])
+sorted = combined.set_index('REGION_y').sort_values(['REGION_y', 'HAPPINESS SCORE'])
 sns.heatmap(sorted.isnull(), cbar=False)
 
 #%% [markdown]
@@ -533,3 +534,4 @@ print(combined['HAPPINESS SCORE UPDATED'].mean())
 
 #%%
 combined = combined.dropna()
+combined.isnull().sum()
